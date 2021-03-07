@@ -5,8 +5,10 @@ WORKDIR /usr/src/app
 
 # install nginx
 RUN apk update
-RUN apk add --no-cache nginx
 RUN apk add --no-cache openrc
+RUN apk add --no-cache nginx
+RUN apk add --no-cache redis
+
 
 
 
