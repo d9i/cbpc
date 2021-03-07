@@ -4,7 +4,7 @@ CBPC API
 Dara Kharabi for Clostra - 2021
 """
 
-from datetime import datetime, time, timezone, tzinfo
+from datetime import date, datetime, time, timezone, tzinfo
 from uuid import UUID
 
 from dateutil.parser import isoparse
@@ -18,7 +18,6 @@ bp = Blueprint('api', __name__)
 
 @bp.route('/collect', methods=['GET'])
 def collect():
-    print("Collect received")
     cid, d = request.args.get("cid"), request.args.get("d")
     # Validate CID, return 400 (bad request) if it can't be turned into a UUID
     if cid is None:
@@ -41,7 +40,7 @@ def collect():
     # If CID is valid and not cached, store it in db
     row = (cid_casted, d_casted)
     # Caching
-    if cache.cache("collect", row):
+    if cache.cache("collect", row) is not None:
         return ("", 200)  # no need to record in DB, cache has it covered
 
     cxn = db.connect()
@@ -60,10 +59,10 @@ def isTzAware(dt):
         return True
 
 
-def uniques(start: datetime, end: datetime) -> int:
+def uniques(start: date, end: date) -> int:
     """Gives count of unique cids between datetimes (inclusive)"""
-    start = datetime.combine(start.date(), time.min, tzinfo=timezone.utc)
-    end = datetime.combine(end.date(), time.max, tzinfo=timezone.utc)
+    start = datetime.combine(start, time.min, tzinfo=timezone.utc)
+    end = datetime.combine(end, time.max, tzinfo=timezone.utc)
 
     cxn = db.connect()
     with cxn:
@@ -101,7 +100,12 @@ def daily_uniques():
             d_casted = d_casted.astimezone(tz=timezone.utc)
         d_casted = d_casted.date()
 
-    cnt = uniques(d_casted, d_casted)
+    # If cache has a value for us, take that, otherwise use the DB
+    cached_val = cache.cache("daily", d_casted)
+    if cached_val is not None:
+        cnt = cached_val
+    else:
+        cnt = uniques(d_casted, d_casted)
 
     # API return value must be a string
     cnt_casted = str(cnt)

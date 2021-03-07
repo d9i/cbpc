@@ -53,7 +53,7 @@ def setup_initial(path):
     cxn = connect_base(path)
 
     with cxn:
-        cxn.execute('''CREATE TABLE contacts (cid UUID, date TIMESTAMP)''')
+        cxn.execute('''CREATE TABLE contacts (cid UUID, date DATE)''')
 
     cxn.close()
 
