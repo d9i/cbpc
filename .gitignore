@@ -1,3 +1,4 @@
 __pycache__
 *.db
-/deploy_prod/
+/deploy_prod/app_cfg.py
+.coverage
