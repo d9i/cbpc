@@ -1,6 +1,6 @@
 # What is this?
 
-It's a simple API, plus a lot of scaffolding to get it to production at high performance with a smallish (~128MB dockerized) footprint.
+It's a simple API, plus a lot of scaffolding to get it to production at high performance with a smallish footprint.
 
 Overall architecture is An API written in Flask, running on GUnicorn, behind nginx. Sqlite is used for persistent storage and Redis for caching.
 
