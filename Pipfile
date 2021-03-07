@@ -5,14 +5,15 @@ name = "pypi"
 
 [packages]
 flask = "*"
-python-dotenv = "*"
 python-dateutil = "*"
+gunicorn = "*"
 
 [dev-packages]
 isort = "*"
 autopep8 = "*"
 pytest = "*"
 coverage = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.9"
