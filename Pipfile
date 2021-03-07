@@ -8,6 +8,7 @@ flask = "*"
 python-dateutil = "*"
 gunicorn = "*"
 redis = "*"
+coverage = {extras = ["toml"], version = "*"}
 
 [dev-packages]
 isort = "*"

@@ -1,0 +1,10 @@
+[tool.isort]
+profile = "hug"
+src_paths = "src"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+
+[tool.coverage.run]
+branch = true
+source = ["cbpc"]
