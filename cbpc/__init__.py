@@ -38,6 +38,10 @@ def create_app(test_config=None):
     from . import db
     db.app_init(app)
 
+    # register cache commands
+    from . import cache
+    cache.app_init(app)
+
     # apply the blueprints to the app
     from . import api
     app.register_blueprint(api.bp)
