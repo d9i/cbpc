@@ -4,7 +4,9 @@ CBPC API
 Dara Kharabi for Clostra - 2021
 """
 
-from datetime import date, datetime, timezone, time
+from dateutil.parser import isoparse
+
+from datetime import datetime, time, timezone
 from uuid import UUID
 
 from flask import Blueprint, request
@@ -25,10 +27,10 @@ def collect():
     except (TypeError, ValueError):
         return ("UUID incorrectly formatted, please try again.", 400)
 
-    # Validate date if given, return 400 (bad request) if it fails
     if d is None:
         d_casted = datetime.now(timezone.utc)
     else:
+        # Validate date if given, return 400 (bad request) if it fails
         try:
             d = int(d)
             d_casted = datetime.fromtimestamp(d, tz=timezone.utc)
@@ -69,7 +71,7 @@ def uniques(start: datetime, end: datetime) -> int:
 def daily_uniques():
     d = request.args.get("d")
     try:
-        d_casted = datetime.fromisoformat(d)
+        d_casted = isoparse(d)
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
 
@@ -85,7 +87,7 @@ def daily_uniques():
 def monthly_uniques():
     d = request.args.get("d")
     try:
-        d_casted = datetime.fromisoformat(d)
+        d_casted = isoparse(d)
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
 
