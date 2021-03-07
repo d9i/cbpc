@@ -82,6 +82,10 @@ def daily_uniques():
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
 
+    # Ignore queries older than 60 days
+    if (datetime.now() - d_casted).days > 60:
+        return ("Query period out of range.\n", 400)
+
     # If a timezone aware time is given, convert to UTC before passing to uniques
     if isTzAware(d_casted):
         d_casted = d_casted.astimezone(tz=timezone.utc)
@@ -101,6 +105,10 @@ def monthly_uniques():
         d_casted = isoparse(d)
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
+
+    # Ignore queries older than 60 days
+    if (datetime.now() - d_casted).days > 60:
+        return ("Query period out of range.\n", 400)
 
     # If a timezone aware time is given, convert to UTC before passing to uniques
     if isTzAware(d_casted):
