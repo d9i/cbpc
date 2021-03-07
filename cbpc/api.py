@@ -11,6 +11,7 @@ from dateutil.parser import isoparse
 from flask import Blueprint, request
 
 from . import db
+from . import cache
 
 bp = Blueprint('api', __name__)
 
@@ -28,17 +29,20 @@ def collect():
         return ("UUID incorrectly formatted, please try again.\n", 400)
 
     if d is None:
-        d_casted = datetime.now(timezone.utc)
+        d_casted = datetime.now(timezone.utc).date()
     else:
         # Validate date if given, return 400 (bad request) if it fails
         try:
             d = float(d)
-            d_casted = datetime.fromtimestamp(d, tz=timezone.utc)
+            d_casted = datetime.fromtimestamp(d, tz=timezone.utc).date()
         except (ValueError, OverflowError):
             return ("Date timestamp incorrectly formatted or out of range, please try again.\n", 400)
 
-    # If CID is valid, store it in db
+    # If CID is valid and not cached, store it in db
     row = (cid_casted, d_casted)
+    # Caching
+    if cache.cache("collect", row):
+        return ("", 200)  # no need to record in DB, cache has it covered
 
     cxn = db.connect()
     with cxn:
@@ -82,13 +86,20 @@ def daily_uniques():
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
 
+    # Error if no date given
+    if isinstance(d_casted, time):
+        return ("ISO 8601 timestamp requires a date, please try again.\n", 400)
+
     # Ignore queries older than 60 days
     if (datetime.now() - d_casted).days > 60:
         return ("Query period out of range.\n", 400)
 
-    # If a timezone aware time is given, convert to UTC before passing to uniques
-    if isTzAware(d_casted):
-        d_casted = d_casted.astimezone(tz=timezone.utc)
+    # Truncate datetimes to dates
+    if isinstance(d_casted, datetime):
+        # If a timezone aware time is given, convert to UTC before truncating
+        if isTzAware(d_casted):
+            d_casted = d_casted.astimezone(tz=timezone.utc)
+        d_casted = d_casted.date()
 
     cnt = uniques(d_casted, d_casted)
 
@@ -106,13 +117,20 @@ def monthly_uniques():
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
 
+    # Error if no date given
+    if isinstance(d_casted, time):
+        return ("ISO 8601 timestamp requires a date, please try again.\n", 400)
+
     # Ignore queries older than 60 days
     if (datetime.now() - d_casted).days > 60:
         return ("Query period out of range.\n", 400)
 
-    # If a timezone aware time is given, convert to UTC before passing to uniques
-    if isTzAware(d_casted):
-        d_casted = d_casted.astimezone(tz=timezone.utc)
+    # Truncate datetimes to dates
+    if isinstance(d_casted, datetime):
+        # If a timezone aware time is given, convert to UTC before truncating
+        if isTzAware(d_casted):
+            d_casted = d_casted.astimezone(tz=timezone.utc)
+        d_casted = d_casted.date()
 
     start = d_casted.replace(day=1)
 
