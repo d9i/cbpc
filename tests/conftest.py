@@ -4,13 +4,13 @@ Testing common files and fixtures for CBPC
 Dara Kharabi for Clostra - 2021
 """
 
-import redis
 import os
+import shutil
 import sys
 import tempfile
-import shutil
 
 import pytest
+import redis
 
 # Add parent dir to path so that the cbpc folder can be found
 currentdir = os.path.dirname(os.path.realpath(__file__))
