@@ -6,3 +6,6 @@
 - Tune Redis configuration
 - More test cases
 - E2E load testing
+- HTTPS support
+- Kubernetes instead of ECS?
+- Architecture diagram
