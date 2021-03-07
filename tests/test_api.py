@@ -5,9 +5,10 @@ Dara Kharabi for Clostra - 2021
 """
 
 import random
-from string import printable
-from uuid import uuid4
 from datetime import date, datetime, time, timedelta, timezone
+from string import printable
+from urllib import parse
+from uuid import uuid4
 
 import pytest
 
@@ -21,6 +22,16 @@ def test_notFound(client, endpoint):
 
     resp = client.get(endpoint)
     assert resp.status_code == 404
+
+
+@pytest.mark.parametrize(('endpoint'),
+                         ["/collect", "/daily_uniques", "/monthly_uniques"]
+                         )
+def test_missingParam(client, endpoint):
+    """Does the API properly handle missing parameters?"""
+
+    resp = client.get(endpoint)
+    assert resp.status_code == 400
 
 
 def test_collect_happy_path(client):
@@ -56,25 +67,61 @@ def test_collect_bad_date(client, date):
     assert resp.status_code == 400
 
 
-def test_empty_daily(client):
+@pytest.mark.parametrize(('d'), [
+    date.today(),
+    datetime.now().isoformat(),
+    parse.quote(datetime.now(tz=timezone.utc).isoformat())
+])
+def test_empty_daily(client, d):
     """
     Does the API return 0 when asked for daily uniques without collecting anything?
     This is important for testing the statelessness of the test fixture.
     """
 
-    resp = client.get(f"/daily_uniques?d={date.today()}")
+    resp = client.get(f"/daily_uniques?d={d}")
     assert resp.data == b"0"
     assert resp.status_code == 200
 
 
-def test_empty_monthly(client):
+@pytest.mark.parametrize(('d'), [
+    date.today(),
+    datetime.now().isoformat(),
+    parse.quote(datetime.now(tz=timezone.utc).isoformat())
+])
+def test_empty_monthly(client, d):
     """
     Does the API return 0 when asked for monthly uniques without collecting anything?
     This is important for testing the statelessness of the test fixture.
     """
-    resp = client.get(f"/monthly_uniques?d={date.today()}")
+    resp = client.get(f"/monthly_uniques?d={d}")
     assert resp.data == b"0"
     assert resp.status_code == 200
+
+
+def test_time_daily(client):
+    """Does the API reject ISO 8601 times with no date?"""
+    resp = client.get(f"/daily_uniques?d={datetime.now().time()}")
+    assert resp.status_code == 400
+
+
+def test_time_monthly(client):
+    """Does the API reject ISO 8601 times with no date?"""
+    resp = client.get(f"/monthly_uniques?d={datetime.now().time()}")
+    assert resp.status_code == 400
+
+
+def test_outOfRange_daily(client):
+    """Does the API reject ISO 8601 dates from >60 days ago?"""
+    old_date = datetime.today() - timedelta(days=61)
+    resp = client.get(f"/daily_uniques?d={old_date}")
+    assert resp.status_code == 400
+
+
+def test_outOfRange_monthly(client):
+    """Does the API reject ISO 8601 dates from >60 days ago?"""
+    old_date = datetime.today() - timedelta(days=61)
+    resp = client.get(f"/monthly_uniques?d={old_date}")
+    assert resp.status_code == 400
 
 
 def test_functional_daily(client):
@@ -107,6 +154,12 @@ def test_functional_daily(client):
 
     # Just making sure the results haven't changed with the new data
     resp = client.get(f"/daily_uniques?d={date.today()}")
+    assert abs(int(resp.data) - 1000) < 8
+    assert resp.status_code == 200
+
+    # Datetime truncation
+    full_date = parse.quote(datetime.now(tz=timezone.utc).isoformat())
+    resp = client.get(f"/daily_uniques?d={full_date}")
     assert abs(int(resp.data) - 1000) < 8
     assert resp.status_code == 200
 
@@ -143,6 +196,13 @@ def test_functional_monthly(client):
         assert resp.status_code == 200
 
     resp = client.get(f"/monthly_uniques?d={date.today()}")
+    assert abs(int(resp.data) - 1501) < 1
+    assert resp.status_code == 200
+
+    # Datetime truncation
+    full_date = parse.quote(datetime.now(tz=timezone.utc).isoformat())
+    print(full_date)
+    resp = client.get(f"/monthly_uniques?d={full_date}")
     assert abs(int(resp.data) - 1501) < 1
     assert resp.status_code == 200
 
