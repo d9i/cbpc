@@ -70,7 +70,7 @@ def test_functional_daily(client):
 
     # Running this test case at midnight GMT may have unexpected results
     resp = client.get(f"/daily_uniques?d={date.today()}")
-    assert resp.data == b"1000"
+    assert abs(int(resp.data) - 1000) < 8
     assert resp.status_code == 200
 
     cid = uuid4()
@@ -83,11 +83,11 @@ def test_functional_daily(client):
 
     # Just making sure the results haven't changed with the new data
     resp = client.get(f"/daily_uniques?d={date.today()}")
-    assert resp.data == b"1000"
+    assert abs(int(resp.data) - 1000) < 8
     assert resp.status_code == 200
 
     resp = client.get(f"/daily_uniques?d={yyday}")
-    assert resp.data == b"501"
+    assert abs(int(resp.data) - 501) < 6
     assert resp.status_code == 200
 
 
@@ -103,7 +103,7 @@ def test_functional_monthly(client):
         assert resp.status_code == 200
 
     resp = client.get(f"/monthly_uniques?d={date.today()}")
-    assert resp.data == b"1000"
+    assert abs(int(resp.data) - 1000) < 1
     assert resp.status_code == 200
 
     cid = uuid4()
@@ -115,13 +115,13 @@ def test_functional_monthly(client):
         assert resp.status_code == 200
 
     resp = client.get(f"/monthly_uniques?d={date.today()}")
-    assert resp.data == b"1501"
+    assert abs(int(resp.data) - 1501) < 1
     assert resp.status_code == 200
 
     resp = client.get(f"/monthly_uniques?d={yyday}")
-    assert resp.data == b"501"
+    assert abs(int(resp.data) - 501) < 1
     assert resp.status_code == 200
 
     resp = client.get(f"/monthly_uniques?d={tomorrow}")
-    assert resp.data == b"1501"
+    assert abs(int(resp.data) - 1501) < 1
     assert resp.status_code == 200
