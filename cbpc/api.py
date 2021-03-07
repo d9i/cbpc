@@ -17,24 +17,25 @@ bp = Blueprint('api', __name__)
 
 @bp.route('/collect', methods=['GET'])
 def collect():
+    print("Collect received")
     cid, d = request.args.get("cid"), request.args.get("d")
     # Validate CID, return 400 (bad request) if it can't be turned into a UUID
     if cid is None:
-        return ("\'cid\' parameter not provided.", 400)
+        return ("\'cid\' parameter not provided.\n", 400)
     try:
         cid_casted = UUID(cid)
     except (TypeError, ValueError):
-        return ("UUID incorrectly formatted, please try again.", 400)
+        return ("UUID incorrectly formatted, please try again.\n", 400)
 
     if d is None:
         d_casted = datetime.now(timezone.utc)
     else:
         # Validate date if given, return 400 (bad request) if it fails
         try:
-            d = int(d)
+            d = float(d)
             d_casted = datetime.fromtimestamp(d, tz=timezone.utc)
         except (ValueError, OverflowError):
-            return ("Date timestamp incorrectly formatted or out of range, please try again.", 400)
+            return ("Date timestamp incorrectly formatted or out of range, please try again.\n", 400)
 
     # If CID is valid, store it in db
     row = (cid_casted, d_casted)
@@ -69,7 +70,6 @@ def uniques(start: datetime, end: datetime) -> int:
             (start.isoformat(sep=" "), end.isoformat(sep=" "))
         )
         out = cur.fetchone()[0]
-        print(out)
 
     return out
 
@@ -80,7 +80,7 @@ def daily_uniques():
     try:
         d_casted = isoparse(d)
     except ValueError:
-        return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
+        return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
 
     # If a timezone aware time is given, convert to UTC before passing to uniques
     if isTzAware(d_casted):
@@ -100,7 +100,7 @@ def monthly_uniques():
     try:
         d_casted = isoparse(d)
     except ValueError:
-        return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
+        return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
 
     # If a timezone aware time is given, convert to UTC before passing to uniques
     if isTzAware(d_casted):
