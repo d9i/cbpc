@@ -42,4 +42,6 @@ def create_app(test_config=None):
     from . import api
     app.register_blueprint(api.bp)
 
+    print("CBPC App thread started.")
+
     return app
