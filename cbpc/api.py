@@ -82,25 +82,24 @@ def uniques(start: date, end: date) -> int:
     return out
 
 
-@bp.route('/daily_uniques', methods=['GET'])
-def daily_uniques():
-    """Given a GMT date d, return the # of unique cids from that day"""
+def validate_date(dateStr):
+    """
+    Parse and validate a date string for daily and monthly uniques.
 
-    d = request.args.get("d")
+    Returns a tuple, where the first value is a boolean indicating success.
+    If successful, the second value will contain the parsed date. Otherwise,
+    it will contain an error and return code.
+    """
 
     # Error if date cannot be parsed
     try:
-        d_casted = isoparse(d)
-    except ValueError:
-        return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
+        d_casted = isoparse(dateStr)
+    except ValueError as e:
+        return (False, ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400))
 
     # Error if no date given
     if isinstance(d_casted, time):
-        return ("ISO 8601 timestamp requires a date, please try again.\n", 400)
-
-    # Ignore queries older than 60 days
-    if (datetime.now() - d_casted).days > 60:
-        return ("Query period out of range.\n", 400)
+        return (False, ("ISO 8601 timestamp requires a date, please try again.\n", 400))
 
     # Truncate datetimes to dates
     if isinstance(d_casted, datetime):
@@ -108,6 +107,30 @@ def daily_uniques():
         if isTzAware(d_casted):
             d_casted = d_casted.astimezone(tz=timezone.utc)
         d_casted = d_casted.date()
+
+    # Ignore queries older than 60 days
+    if (date.today() - d_casted).days > 60:
+        return (False, ("Query period out of range.\n", 400))
+
+    return (True, d_casted)
+
+
+@bp.route('/daily_uniques', methods=['GET'])
+def daily_uniques():
+    """Given a GMT date d, return the # of unique cids from that day"""
+
+    d = request.args.get("d")
+
+    if d is None:
+        return ("\'d\' parameter not provided.\n", 400)
+
+    status, value = validate_date(d)
+
+    # Error if validation failed, else pass on the value
+    if status is False:
+        return value
+    else:
+        d_casted = value
 
     # If cache has a value for us, take that, otherwise use the DB
     cached_val = cache.cache("daily", d_casted)
@@ -130,19 +153,16 @@ def monthly_uniques():
 
     d = request.args.get("d")
 
-    # Error if date cannot be parsed
-    try:
-        d_casted = isoparse(d)
-    except ValueError:
-        return ("ISO 8601 timestamp incorrectly formatted, please try again.\n", 400)
+    if d is None:
+        return ("\'d\' parameter not provided.\n", 400)
 
-    # Error if no date given
-    if isinstance(d_casted, time):
-        return ("ISO 8601 timestamp requires a date, please try again.\n", 400)
+    status, value = validate_date(d)
 
-    # Ignore queries older than 60 days
-    if (datetime.now() - d_casted).days > 60:
-        return ("Query period out of range.\n", 400)
+    # Error if validation failed, else pass on the value
+    if status is False:
+        return value
+    else:
+        d_casted = value
 
     # Truncate datetimes to dates
     if isinstance(d_casted, datetime):
