@@ -27,7 +27,7 @@ def test_collect_happy_path(client):
 
 
 def test_collect_happy_path_date(client):
-    resp = client.get(f"/collect?cid={str(uuid4())}&d=2020-09-17")
+    resp = client.get(f"/collect?cid={str(uuid4())}&d=1615000000")
     assert resp.data == b""
     assert resp.status_code == 200
 
