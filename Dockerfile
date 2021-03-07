@@ -27,13 +27,6 @@ COPY ./cbpc ./cbpc
 # copy instance folder with config
 COPY ./deploy_prod ./deploy_prod
 
-
-# user for nginx
-RUN adduser -D -g 'www' www
-RUN chown -R www:www /var/lib/nginx
-RUN chown -R www:www ./deploy_prod/static
-RUN rc-update add nginx default
-
 # add custom nginx config
 RUN mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.old
 RUN mv ./deploy_prod/nginx.conf /etc/nginx/nginx.conf
@@ -49,7 +42,7 @@ ENV FLASK_INSTANCE_FOLDER deploy_prod
 ENV FLASK_CFG app_cfg.py
 
 # initialize database
-RUN pipenv run python3 -m cbpc.db-init
+# RUN pipenv run python3 -m cbpc.db-init
 
 
 # Start up gunicorn + nginx (serving the Flask API)
