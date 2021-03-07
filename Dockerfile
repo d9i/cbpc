@@ -9,9 +9,6 @@ RUN apk add --no-cache openrc
 RUN apk add --no-cache nginx
 RUN apk add --no-cache redis
 
-
-
-
 # install update pip if needed
 RUN pip install --upgrade pip
 
@@ -40,10 +37,6 @@ ENV FLASK_APP cbpc
 ENV FLASK_ENV production
 ENV FLASK_INSTANCE_FOLDER deploy_prod
 ENV FLASK_CFG app_cfg.py
-
-# initialize database
-# RUN pipenv run python3 -m cbpc.db-init
-
 
 # Start up gunicorn + nginx (serving the Flask API)
 EXPOSE 80
