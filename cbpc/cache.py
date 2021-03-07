@@ -6,8 +6,8 @@ Dara Kharabi for Clostra - 2021
 
 from datetime import date, timedelta
 
-from flask import current_app, g
 import redis
+from flask import current_app, g
 
 from . import db
 
@@ -57,6 +57,8 @@ def cache(type, v):
 
 
 def warm_cache(app):
+    """Warms cache by filling HLL datastructures from database"""
+
     print("Warming Redis cache...")
     host = app.config["CACHE_HOST"]
     port = app.config["CACHE_PORT"]

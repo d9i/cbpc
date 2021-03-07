@@ -10,14 +10,19 @@ from uuid import UUID
 from dateutil.parser import isoparse
 from flask import Blueprint, request
 
-from . import db
-from . import cache
+from . import cache, db
 
 bp = Blueprint('api', __name__)
 
 
 @bp.route('/collect', methods=['GET'])
 def collect():
+    """
+    Given a valid UUID 'cid,' record it and the current GMT date.
+    Optional parameter 'd' can override the current date with a custom one,
+    for generating test data.
+    """
+
     cid, d = request.args.get("cid"), request.args.get("d")
     # Validate CID, return 400 (bad request) if it can't be turned into a UUID
     if cid is None:
@@ -79,7 +84,11 @@ def uniques(start: date, end: date) -> int:
 
 @bp.route('/daily_uniques', methods=['GET'])
 def daily_uniques():
+    """Given a GMT date d, return the # of unique cids from that day"""
+
     d = request.args.get("d")
+
+    # Error if date cannot be parsed
     try:
         d_casted = isoparse(d)
     except ValueError:
@@ -115,7 +124,13 @@ def daily_uniques():
 
 @bp.route('/monthly_uniques', methods=['GET'])
 def monthly_uniques():
+    """
+    Given a GMT date d, return the # of unique cids month-to-date for that day
+    """
+
     d = request.args.get("d")
+
+    # Error if date cannot be parsed
     try:
         d_casted = isoparse(d)
     except ValueError:

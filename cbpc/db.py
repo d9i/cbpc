@@ -13,9 +13,7 @@ from flask import current_app, g
 
 
 def connect_base(path=None):
-    """
-    DB connection wrapper.
-    """
+    """DB connection wrapper."""
     if path is None:
         path = current_app.config["DB_PATH"]
 
