@@ -15,6 +15,12 @@ from flask import current_app, g
 def setup_initial(path):
     """Create initial schema"""
 
+    # Create the db folder if it doesn't exist
+    try:
+        os.makedirs(os.path.dirname(path))
+    except OSError:
+        pass
+
     # Can't use connect() because application context doesn't exist here.
     # Not registering adapters/converters for this query because no
     # inserts/selects are being used.

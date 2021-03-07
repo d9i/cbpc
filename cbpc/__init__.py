@@ -12,7 +12,13 @@ from flask import Flask
 def create_app(test_config=None):
     """Create and configure an instance of the Flask application."""
 
-    abs_instance_path = os.path.join(os.getcwd(), os.environ.get('FLASK_INSTANCE_FOLDER'))
+    # Get Flask instance folder
+    if test_config is not None:
+        abs_instance_path = test_config["FLASK_INSTANCE_FOLDER"]
+    else:
+        abs_instance_path = os.path.join(os.getcwd(), os.environ.get('FLASK_INSTANCE_FOLDER'))
+
+    # Instantiate Flask app
     app = Flask(__name__, instance_path=abs_instance_path, instance_relative_config=True)
 
     if test_config is None:
