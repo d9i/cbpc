@@ -4,11 +4,10 @@ CBPC API
 Dara Kharabi for Clostra - 2021
 """
 
-from dateutil.parser import isoparse
-
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timezone, tzinfo
 from uuid import UUID
 
+from dateutil.parser import isoparse
 from flask import Blueprint, request
 
 from . import db
@@ -48,6 +47,14 @@ def collect():
     return ("", 200)  # return empty response
 
 
+def isTzAware(dt):
+    """returns true if the given date is timezone-aware"""
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        return False
+    else:
+        return True
+
+
 def uniques(start: datetime, end: datetime) -> int:
     """Gives count of unique cids between datetimes (inclusive)"""
     start = datetime.combine(start.date(), time.min, tzinfo=timezone.utc)
@@ -75,6 +82,10 @@ def daily_uniques():
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
 
+    # If a timezone aware time is given, convert to UTC before passing to uniques
+    if isTzAware(d_casted):
+        d_casted = d_casted.astimezone(tz=timezone.utc)
+
     cnt = uniques(d_casted, d_casted)
 
     # API return value must be a string
@@ -90,6 +101,10 @@ def monthly_uniques():
         d_casted = isoparse(d)
     except ValueError:
         return ("ISO 8601 timestamp incorrectly formatted, please try again.", 400)
+
+    # If a timezone aware time is given, convert to UTC before passing to uniques
+    if isTzAware(d_casted):
+        d_casted = d_casted.astimezone(tz=timezone.utc)
 
     start = d_casted.replace(day=1)
 
