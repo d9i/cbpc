@@ -29,13 +29,11 @@ def app():
     # create the app with test config
     test_config = {
         "TESTING": True,
-        "DATABASE": "db/live.db",
         "SECRET_KEY": "testing",
         "FLASK_INSTANCE_FOLDER": path,
-        "CACHE": True,
         "CACHE_HOST": "localhost",
         "CACHE_PORT": "6379",
-        "CACHE_STATUS": "COLD"}
+        "CACHE_EXP_DAYS": 60}
 
     app = create_app(test_config)
 
@@ -45,6 +43,7 @@ def app():
     host = test_config["CACHE_HOST"]
     port = test_config["CACHE_PORT"]
     rcxn = redis.Redis(host=host, port=port, db=0)
+    rcxn.flushdb()
 
     # clean up temp folder
     shutil.rmtree(path)

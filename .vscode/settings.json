@@ -1,4 +1,3 @@
 {
-    "editor.formatOnSave": true,
-    "python.pythonPath": "~/.local/share/virtualenvs/cbpc-kh_QwQtF/bin/python"
+    "editor.formatOnSave": true
 }

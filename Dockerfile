@@ -38,6 +38,6 @@ ENV FLASK_ENV production
 ENV FLASK_INSTANCE_FOLDER deploy_prod
 ENV FLASK_CFG app_cfg.py
 
-# Start up gunicorn + nginx (serving the Flask API)
+# Start up gunicorn (serving the Flask API) + nginx + redis
 EXPOSE 80
 ENTRYPOINT ["./deploy_prod/start_server.sh"]

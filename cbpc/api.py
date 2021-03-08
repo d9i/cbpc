@@ -4,13 +4,13 @@ CBPC API
 Dara Kharabi for Clostra - 2021
 """
 
-from datetime import date, datetime, time, timezone, tzinfo
+from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from uuid import UUID
 
 from dateutil.parser import isoparse
 from flask import Blueprint, request
 
-from . import cache, db
+from . import cache
 
 bp = Blueprint('api', __name__)
 
@@ -42,18 +42,16 @@ def collect():
         except (ValueError, OverflowError):
             return ("Date timestamp incorrectly formatted or out of range, please try again.\n", 400)
 
-    # If CID is valid and not cached, store it in db
-    row = (cid_casted, d_casted)
-    # Caching
-    if cache.cache("collect", row) is not None:
-        return ("", 200)  # no need to record in DB, cache has it covered
-
-    cxn = db.connect()
-    with cxn:
-        # perform DB operations, then commit
-        cxn.execute('''INSERT INTO contacts VALUES (?, ?)''', row)
-
-    return ("", 200)  # return empty response
+    # If CID is valid and not store it in redis cache
+    # stringify both date and cid
+    cid_casted = str(cid_casted)
+    d_casted = d_casted.isoformat()
+    ret = cache.pfaddex(d_casted, cid_casted)
+    if ret is True:
+        return ("", 200)  # return empty response
+    else:
+        # if cache operation failed
+        return ("Internal Server error", 500)
 
 
 def isTzAware(dt):
@@ -64,22 +62,18 @@ def isTzAware(dt):
         return True
 
 
-def uniques(start: date, end: date) -> int:
-    """Gives count of unique cids between datetimes (inclusive)"""
-    start = datetime.combine(start, time.min, tzinfo=timezone.utc)
-    end = datetime.combine(end, time.max, tzinfo=timezone.utc)
+def uniques(start: date, end: date = None) -> int:
+    """Gives count of unique cids between dates (inclusive)"""
+    if end is None:
+        end = start
+    rcxn = cache.connect()
 
-    cxn = db.connect()
-    with cxn:
-        cur = cxn.cursor()
-        # perform DB operations, then commit
-        cur.execute(
-            '''SELECT COUNT(DISTINCT cid) FROM contacts WHERE date BETWEEN ? AND ?''',
-            (start.isoformat(sep=" "), end.isoformat(sep=" "))
-        )
-        out = cur.fetchone()[0]
+    # Get keys for each day in range
+    delta = end - start
+    keys = [(start + timedelta(days=d)).isoformat() for d in range(delta.days + 1)]
 
-    return out
+    # Pull from cache
+    return rcxn.pfcount(*keys)
 
 
 def validate_date(dateStr):
@@ -90,6 +84,9 @@ def validate_date(dateStr):
     If successful, the second value will contain the parsed date. Otherwise,
     it will contain an error and return code.
     """
+
+    if dateStr is None:
+        return (False, ("\'d\' parameter not provided.\n", 400))
 
     # Error if date cannot be parsed
     try:
@@ -120,10 +117,6 @@ def daily_uniques():
     """Given a GMT date d, return the # of unique cids from that day"""
 
     d = request.args.get("d")
-
-    if d is None:
-        return ("\'d\' parameter not provided.\n", 400)
-
     status, value = validate_date(d)
 
     # Error if validation failed, else pass on the value
@@ -132,12 +125,8 @@ def daily_uniques():
     else:
         d_casted = value
 
-    # If cache has a value for us, take that, otherwise use the DB
-    cached_val = cache.cache("daily", d_casted)
-    if cached_val is not None:
-        cnt = cached_val
-    else:
-        cnt = uniques(d_casted, d_casted)
+    # pull value from redis
+    cnt = uniques(d_casted)
 
     # API return value must be a string
     cnt_casted = str(cnt)
@@ -152,10 +141,6 @@ def monthly_uniques():
     """
 
     d = request.args.get("d")
-
-    if d is None:
-        return ("\'d\' parameter not provided.\n", 400)
-
     status, value = validate_date(d)
 
     # Error if validation failed, else pass on the value
@@ -163,13 +148,6 @@ def monthly_uniques():
         return value
     else:
         d_casted = value
-
-    # Truncate datetimes to dates
-    if isinstance(d_casted, datetime):
-        # If a timezone aware time is given, convert to UTC before truncating
-        if isTzAware(d_casted):
-            d_casted = d_casted.astimezone(tz=timezone.utc)
-        d_casted = d_casted.date()
 
     start = d_casted.replace(day=1)
 

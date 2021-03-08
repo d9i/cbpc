@@ -34,10 +34,6 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # register the database commands
-    from . import db
-    db.app_init(app)
-
     # register cache commands
     from . import cache
     cache.app_init(app)
